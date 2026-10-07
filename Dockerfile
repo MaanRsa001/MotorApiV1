@@ -1,0 +1,12 @@
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /build
+COPY . .
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY --from=build /build/target/*.jar app.jar
+
+EXPOSE 8086 9012
+
+ENTRYPOINT ["java","-XX:+UseContainerSupport","-XX:MaxRAMPercentage=70","-XX:MetaspaceSize=128m","-XX:MaxMetaspaceSize=256m","-XX:MaxDirectMemorySize=128m","-XX:+ExitOnOutOfMemoryError","-Xlog:gc*,metaspace","-Dcom.sun.management.jmxremote","-Dcom.sun.management.jmxremote.port=9012","-Dcom.sun.management.jmxremote.rmi.port=9012","-Dcom.sun.management.jmxremote.authenticate=false","-Dcom.sun.management.jmxremote.ssl=false","-Djava.rmi.server.hostname=192.168.1.185","-jar","app.jar"]
